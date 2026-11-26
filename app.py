@@ -3,14 +3,19 @@ import base64
 import time
 from pathlib import Path
 import ollama
-# Connect to Ollama API
-# ZENTRA AI - Ollama connection
 
 # =========================================================
-# CONNECT ZENTRA AI TO OLLAMA
+# ZENTRA AI - OLLAMA CLOUD CONNECTION
 # =========================================================
 
-MODEL_NAME = "llama3.2:3b"
+MODEL_NAME = "gpt-oss:120b"
+
+client = ollama.Client(
+    host="https://ollama.com",
+    headers={
+        "Authorization": f"Bearer {st.secrets['OLLAMA_API_KEY']}"
+    }
+)
 
 
 def get_zentra_response(messages):
@@ -35,15 +40,15 @@ def get_zentra_response(messages):
             "content": message["content"]
         })
 
-    # Connect to Ollama and stream the AI response
-    stream = ollama.chat(
+    # Connect to Ollama Cloud and stream the response
+    stream = client.chat(
         model=MODEL_NAME,
         messages=ollama_messages,
         stream=True
     )
 
     for chunk in stream:
-        content = chunk["message"]["content"]
+        content = chunk.message.content
 
         if content:
             yield content
