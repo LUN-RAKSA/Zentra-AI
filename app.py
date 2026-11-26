@@ -28,7 +28,7 @@ def get_zentra_response(messages):
                 "intelligent AI assistant. "
                 "You help users learn, write code, solve problems, "
                 "brainstorm ideas, and answer questions. "
-                "Give clear and useful answers."
+                "Give clear, accurate, and useful answers."
             )
         }
     ]
@@ -40,15 +40,16 @@ def get_zentra_response(messages):
             "content": message["content"]
         })
 
-    # Connect to Ollama Cloud and stream the response
+    # Send request to Ollama Cloud
     stream = client.chat(
         model=MODEL_NAME,
         messages=ollama_messages,
         stream=True
     )
 
+    # Stream the AI response
     for chunk in stream:
-        content = chunk.message.content
+        content = chunk["message"]["content"]
 
         if content:
             yield content
