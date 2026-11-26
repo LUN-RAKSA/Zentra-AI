@@ -2,28 +2,42 @@ import streamlit as st
 import base64
 import time
 from pathlib import Path
-import ollama
+
 
 # =========================================================
-# ZENTRA AI - OLLAMA CLOUD CONNECTION
+# ZENTRA AI - GOOGLE GEMINI CONNECTION
 # =========================================================
 
-MODEL_NAME = "gpt-oss:120b"
+from google import genai
 
-client = ollama.Client(
-    host="https://ollama.com",
-    headers={
-        "Authorization": f"Bearer {st.secrets['OLLAMA_API_KEY']}"
-    }
+GEMINI_MODEL = "gemini-2.5-flash"
+
+gemini_client = genai.Client(
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
 
 
 def get_zentra_response(messages):
 
-    ollama_messages = [
-        {
-            "role": "system",
-            "content": (
+    contents = []
+
+    # Convert chat history to Gemini format
+    for message in messages:
+        role = "model" if message["role"] == "assistant" else "user"
+
+        contents.append({
+            "role": role,
+            "parts": [
+                {"text": message["content"]}
+            ]
+        })
+
+    # Stream response from Gemini
+    stream = gemini_client.models.generate_content_stream(
+        model=GEMINI_MODEL,
+        contents=contents,
+        config={
+            "system_instruction": (
                 "You are ZENTRA AI, a helpful, friendly, "
                 "intelligent AI assistant. "
                 "You help users learn, write code, solve problems, "
@@ -31,28 +45,11 @@ def get_zentra_response(messages):
                 "Give clear, accurate, and useful answers."
             )
         }
-    ]
-
-    # Add conversation history
-    for message in messages:
-        ollama_messages.append({
-            "role": message["role"],
-            "content": message["content"]
-        })
-
-    # Send request to Ollama Cloud
-    stream = client.chat(
-        model=MODEL_NAME,
-        messages=ollama_messages,
-        stream=True
     )
 
-    # Stream the AI response
     for chunk in stream:
-        content = chunk["message"]["content"]
-
-        if content:
-            yield content
+        if chunk.text:
+            yield chunk.text
 # =========================================================
 # ZENTRA AI - CONFIGURATION
 # =========================================================
